@@ -8,12 +8,6 @@ CREATE TABLE "user" (
     updated_at TIMESTAMP DEFAULT NOW()     
 );
 
-CREATE TABLE magic_link (
-    id UUID PRIMARY KEY,
-    email TEXT NOT NULL,
-    token TEXT UNIQUE NOT NULL,
-    expired_at TIMESTAMP NOT NULL
-);
 
 INSERT INTO "user" (id, name, email, address)
 VALUES
