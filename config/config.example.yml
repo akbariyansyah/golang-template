@@ -1,0 +1,11 @@
+appVer: 1.0.0
+address: 3000
+env : "local"
+
+database:
+  host: ${DATABASE_HOST}
+  user: ${DATABASE_USER}
+  password: ${DATABASE_PASSWORD}
+  dbname: ${DATABASE_NAME}
+  sslmode: disable
+
