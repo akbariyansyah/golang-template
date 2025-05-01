@@ -8,7 +8,7 @@ import (
 	"task_1/internal/adapter/repository"
 	"task_1/internal/adapter/rest"
 	"task_1/internal/app/service"
-	"task_1/internal/pkg/logo"
+
 	"task_1/internal/pkg/middleware"
 
 	"github.com/jmoiron/sqlx"
@@ -71,6 +71,5 @@ func Run() {
 	// Register handler
 	rest.NewUserHandler(e, userService)
 
-	fmt.Println(logo.Logo())
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", config.Address)))
 }
