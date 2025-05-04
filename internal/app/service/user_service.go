@@ -15,7 +15,7 @@ type userService struct {
 	userRepository user.Repository
 }
 
-func NewUserService(userRepository user.Repository) *userService {
+func NewUserService(userRepository user.Repository) UserService {
 	return &userService{userRepository: userRepository}
 }
 
