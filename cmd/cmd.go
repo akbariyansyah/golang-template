@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -11,10 +12,10 @@ import (
 
 	"task_1/internal/pkg/middleware"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"go.uber.org/fx"
 )
 
 const (
@@ -38,24 +39,9 @@ func Run() {
 
 	config := &config.Configuration{}
 	if err := config.SetConfig(path); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-
-	// Register packages
-	db, err := sqlx.Connect("postgres", databaseURL)
-	if err != nil {
-		log.Fatalf("cannot start postgres database: %v", err)
-	}
-
-	// Register Repo
-	userRepository := repository.NewUserRepository(db)
-
-	// Register service
-
-	userService := service.NewUserService(userRepository)
-
-	e := echo.New()
 
 	logger, err := middleware.CreateLogger("server.log")
 	if err != nil {
@@ -64,12 +50,37 @@ func Run() {
 
 	defer logger.Sync()
 
-	e.HideBanner = true
-	e.Use(middleware.ErrorHandlingMiddleware)
-	e.Use(middleware.LoggerMiddleware(logger))
+	app := fx.New(
+		fx.Supply(databaseURL),
+		fx.Supply(config.Address),
 
-	// Register handler
-	rest.NewUserHandler(e, userService)
+		fx.Provide(repository.NewDatabase),
 
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", config.Address)))
+		fx.Provide(
+			repository.NewUserRepository,
+			service.NewUserService,
+		),
+
+		fx.Provide(func() *echo.Echo {
+			e := echo.New()
+			e.HideBanner = true
+			e.Use(middleware.ErrorHandlingMiddleware)
+			e.Use(middleware.LoggerMiddleware(logger))
+			return e
+		}),
+
+		fx.Invoke(func(e *echo.Echo, us service.UserService) {
+			rest.NewUserHandler(e, us)
+		}),
+		fx.Invoke(func(e *echo.Echo) {
+			rest.NewHealthHandler(e)
+		}),
+
+		fx.Invoke(RegisterServer),
+	)
+
+	if err := app.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+
 }
